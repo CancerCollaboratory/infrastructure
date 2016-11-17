@@ -1,4 +1,4 @@
-## Glance image refresh script
+# Glance image refresh script
 
 ## What does this script do?
 * Check for new cloud images for various distributions (Ubuntu, CentOS, Debian)
