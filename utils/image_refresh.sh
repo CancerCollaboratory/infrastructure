@@ -4,16 +4,11 @@ exec 1> >(tee -a /var/log/image_refresh.log) 2>&1
 # Prints the date, used for logging purposes
 date
 # Source Openstack credentials
-source /path/to/your/credentials
+source /root/openrc-admin
 UPDATE=$1 # Arguments
 PTH="/tmp/" # Working directory
 EMAIL="no"
 REPORT="image_refresh_report.txt"
-# Define distribution image location
-UBUNTU_14="https://cloud-images.ubuntu.com/releases/14.04/release/ubuntu-14.04-server-cloudimg-amd64-disk1.img"
-UBUNTU_16="https://cloud-images.ubuntu.com/releases/16.04/release/ubuntu-16.04-server-cloudimg-amd64-disk1.img"
-CENTOS_7="http://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2"
-DEBIAN_8="http://cdimage.debian.org/cdimage/openstack/current/debian-8.6.1-openstack-amd64.qcow2"
 
 # Get list of checksum files
 wget -q https://cloud-images.ubuntu.com/releases/14.04/release/SHA256SUMS -O ${PTH}checksums_UBUNTU_14
@@ -25,7 +20,14 @@ wget -q http://cdimage.debian.org/cdimage/openstack/current/SHA256SUMS -O ${PTH}
 OCS_U14=`grep "ubuntu-14.04-server-cloudimg-amd64-disk1.img$" ${PTH}checksums_UBUNTU_14 | awk '{print $1}'`
 OCS_U16=`grep "ubuntu-16.04-server-cloudimg-amd64-disk1.img$" ${PTH}checksums_UBUNTU_16 | awk '{print $1}'`
 OCS_C7=`tail -4 ${PTH}checksums_CENTOS_7 | head -1 | awk '{print $1}'`
-OCS_D8=`grep "debian-8.6.1-openstack-amd64.qcow2$" ${PTH}checksums_DEBIAN_8 | awk '{print $1}'`
+OCS_D8=`egrep "debian.*amd.*.qcow2$" ${PTH}checksums_DEBIAN_8 | awk '{print $1}'`
+D8_FILE=`egrep "debian.*amd.*.qcow2$" ${PTH}checksums_DEBIAN_8 | awk '{print $2}'`
+
+# Define distribution image location
+UBUNTU_14="https://cloud-images.ubuntu.com/releases/14.04/release/ubuntu-14.04-server-cloudimg-amd64-disk1.img"
+UBUNTU_16="https://cloud-images.ubuntu.com/releases/16.04/release/ubuntu-16.04-server-cloudimg-amd64-disk1.img"
+CENTOS_7="http://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2"
+DEBIAN_8="http://cdimage.debian.org/cdimage/openstack/current/${D8_FILE}"
 
 # Get checksums from current openstack images
 CS_U14=`openstack image show -c properties -f value "Ubuntu 14.04 - latest" | awk -F'=' '{print $4}'| awk -F"'" '{print $2}'`
@@ -113,18 +115,19 @@ if [ ${CS_D8} = ${OCS_D8} ]
                 then
 		echo "Debian 8 online checksum does not match local, downloading new image"
 		wget -q ${DEBIAN_8} -P ${PTH}
-		LCS_D8=`sha256sum ${PTH}debian-8.6.1-openstack-amd64.qcow2 | awk '{print $1}'`
+		LCS_D8=`sha256sum ${PTH}${D8_FILE} | awk '{print $1}'`
                 if [ ${OCS_D8} = ${LCS_D8} ] # Validate downloaded file
                         then echo "Debian 8 local checksums match, creating new glance image"
                         else echo "Debian 8 local checksum [${LCS_D8}] does not match online checksum [${OCS_D8}], please investigate"
 			exit 1
                 fi
-		openstack image create --container-format bare --disk-format qcow2 --file ${PTH}debian-8.6.1-openstack-amd64.qcow2 --property description='Default user is "debian" and access is only allowed using ssh keys.' --property sha256=${LCS_D8} --public "Debian 8 - latest.tmp"
+		openstack image create --container-format bare --disk-format qcow2 --file ${PTH}${D8_FILE} --property description='Default user is "debian" and access is only allowed using ssh keys.' --property sha256=${LCS_D8} --public "Debian 8 - latest.tmp"
         	openstack image delete "Debian 8 - latest" && openstack image set "Debian 8 - latest.tmp" --name "Debian 8 - latest"
 	fi
 fi
 if [ ${EMAIL} = yes ]
-	then /usr/lib/zabbix/alertscripts/gmail_alert.sh "your.email.address.here" "Glance Image refresh needed" "`cat ${PTH}${REPORT}`"
+	then /usr/lib/zabbix/alertscripts/gmail_alert.sh "jared.baker@oicr.on.ca" "Glance Image refresh needed" "`cat ${PTH}${REPORT}`"
+	/usr/lib/zabbix/alertscripts/gmail_alert.sh "george.mihaiescu@oicr.on.ca" "Glance Image refresh needed" "`cat ${PTH}${REPORT}`"
 fi
 
 # File cleanup
