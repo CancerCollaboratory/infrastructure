@@ -4,7 +4,7 @@ exec 1> >(tee -a /var/log/image_refresh.log) 2>&1
 # Prints the date, used for logging purposes
 date
 # Source Openstack credentials
-source /root/openrc-admin
+source /path/to/your/credentials
 UPDATE=$1 # Arguments
 PTH="/tmp/" # Working directory
 EMAIL="no"
