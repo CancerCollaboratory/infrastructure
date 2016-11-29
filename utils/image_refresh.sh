@@ -126,8 +126,7 @@ if [ ${CS_D8} = ${OCS_D8} ]
 	fi
 fi
 if [ ${EMAIL} = yes ]
-	then /usr/lib/zabbix/alertscripts/gmail_alert.sh "jared.baker@oicr.on.ca" "Glance Image refresh needed" "`cat ${PTH}${REPORT}`"
-	/usr/lib/zabbix/alertscripts/gmail_alert.sh "george.mihaiescu@oicr.on.ca" "Glance Image refresh needed" "`cat ${PTH}${REPORT}`"
+	then /usr/lib/zabbix/alertscripts/gmail_alert.sh "your@email.address.here" "Glance Image refresh needed" "`cat ${PTH}${REPORT}`"
 fi
 
 # File cleanup
