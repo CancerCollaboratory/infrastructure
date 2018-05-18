@@ -1,0 +1,32 @@
+{
+    "VMTasks.boot_runcommand_delete": [
+        {
+            "args": {
+                "flavor": {
+                    "name": "c1.micro"
+                          },
+                "image": {
+                    "name": "^Ubuntu 16.04 - latest$"
+                         },
+                "floating_network": "ext-net",
+                "force_delete": true,
+                "command": {
+                "script_file": "support/ping_test.sh",
+                "interpreter": "/bin/sh"
+                           },
+                "username": "ubuntu"
+                   },
+            "runner": {
+                "type": "constant",
+                "times": 1,
+                "concurrency": 1
+                      },
+            "sla": {
+                "max_seconds_per_iteration": 150,
+                "failure_rate": {
+                    "max": 0.0
+                                }
+                }
+       }
+]
+}
